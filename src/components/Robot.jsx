@@ -6,9 +6,6 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 const Robot = () => {
   const mountRef = useRef(null);
   const [controlPoints, setControlPoints] = useState([]);
-  const raycaster = useRef(new THREE.Raycaster()).current;
-  const mouse = useRef(new THREE.Vector2()).current;
-  const [lineSegments, setLineSegments] = useState([]);
 
   useEffect(() => {
     // Scene Setup
@@ -19,7 +16,6 @@ const Robot = () => {
     // Renderer Setup
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(800, 600); // Initial size
-    renderer.setPixelRatio(window.devicePixelRatio);
     mountRef.current.appendChild(renderer.domElement);
 
     // Lighting
@@ -73,6 +69,9 @@ const Robot = () => {
     controls.dampingFactor = 0.25;
     controls.enableZoom = true;
 
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
     const handleMouseClick = (event) => {
       const boundingRect = mountRef.current.getBoundingClientRect();
       mouse.x = ((event.clientX - boundingRect.left) / boundingRect.width) * 2 - 1;
@@ -88,7 +87,10 @@ const Robot = () => {
           // Add control point
           setControlPoints((prevPoints) => {
             const newPoints = [...prevPoints, point];
-            updateLines(newPoints);
+            if (newPoints.length === 3) {
+              drawCurve(newPoints);
+              return [];
+            }
             return newPoints;
           });
 
@@ -106,24 +108,16 @@ const Robot = () => {
       }
     };
 
-    const updateLines = (points) => {
-      // Remove existing lines
-      lineSegments.forEach((line) => scene.remove(line));
-      setLineSegments([]);
-
-      if (points.length < 2) return;
-
-      // Draw lines between points
-      for (let i = 0; i < points.length - 1; i++) {
-        const geometry = new THREE.BufferGeometry().setFromPoints([points[i], points[i + 1]]);
-        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-        const line = new THREE.Line(geometry, material);
-        scene.add(line);
-        setLineSegments((prev) => [...prev, line]);
-      }
-    };
-
     window.addEventListener('click', handleMouseClick, false);
+
+    function drawCurve(points) {
+      const curve = new THREE.CatmullRomCurve3(points);
+      const curvePoints = curve.getPoints(500);
+      const geometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+      const curveObject = new THREE.Line(geometry, material);
+      scene.add(curveObject);
+    }
 
     // Animation Loop
     const animate = () => {
@@ -149,7 +143,6 @@ const Robot = () => {
     // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
-      window.removeEventListener('click', handleMouseClick);
       mountRef.current.removeChild(renderer.domElement);
       if (loadedMesh) {
         loadedMesh.geometry.dispose();
