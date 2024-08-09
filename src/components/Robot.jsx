@@ -5,8 +5,11 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 
 const Robot = () => {
   const mountRef = useRef(null);
-
   const [controlPoints, setControlPoints] = useState([]);
+  const raycaster = useRef(new THREE.Raycaster()).current;
+  const mouse = useRef(new THREE.Vector2()).current;
+  const [lineSegments, setLineSegments] = useState([]);
+
   useEffect(() => {
     // Scene Setup
     const scene = new THREE.Scene();
@@ -16,6 +19,7 @@ const Robot = () => {
     // Renderer Setup
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(800, 600); // Initial size
+    renderer.setPixelRatio(window.devicePixelRatio);
     mountRef.current.appendChild(renderer.domElement);
 
     // Lighting
@@ -68,36 +72,55 @@ const Robot = () => {
     controls.enableDamping = true;
     controls.dampingFactor = 0.25;
     controls.enableZoom = true;
-    const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
 
     const handleMouseClick = (event) => {
-        const boundingRect = mountRef.current.getBoundingClientRect();
+      const boundingRect = mountRef.current.getBoundingClientRect();
       mouse.x = ((event.clientX - boundingRect.left) / boundingRect.width) * 2 - 1;
       mouse.y = -((event.clientY - boundingRect.top) / boundingRect.height) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera);
+      raycaster.setFromCamera(mouse, camera);
 
-        if (loadedMesh) {
-            const intersects = raycaster.intersectObject(loadedMesh);
+      if (loadedMesh) {
+        const intersects = raycaster.intersectObject(loadedMesh);
 
-            if (intersects.length > 0) {
-                const point = intersects[0].point;
+        if (intersects.length > 0) {
+          const point = intersects[0].point;
 
-                // Add control point
-                setControlPoints((prevPoints) => [...prevPoints, point]);
+          // Add control point
+          setControlPoints((prevPoints) => {
+            const newPoints = [...prevPoints, point];
+            updateLines(newPoints);
+            return newPoints;
+          });
 
-                // Visualize the point
-                const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-                const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-                sphere.position.copy(point);
-                scene.add(sphere);
-            } else {
-                console.log('Clicked outside the model');
-            }
+          // Visualize the point
+          const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+          const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+          const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+          sphere.position.copy(point);
+          scene.add(sphere);
         } else {
-            console.log('STL model not loaded yet');
+          console.log('Clicked outside the model');
         }
+      } else {
+        console.log('STL model not loaded yet');
+      }
+    };
+
+    const updateLines = (points) => {
+      // Remove existing lines
+      lineSegments.forEach((line) => scene.remove(line));
+      setLineSegments([]);
+
+      if (points.length < 2) return;
+
+      // Draw lines between points
+      for (let i = 0; i < points.length - 1; i++) {
+        const geometry = new THREE.BufferGeometry().setFromPoints([points[i], points[i + 1]]);
+        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        setLineSegments((prev) => [...prev, line]);
+      }
     };
 
     window.addEventListener('click', handleMouseClick, false);
@@ -126,6 +149,7 @@ const Robot = () => {
     // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener('click', handleMouseClick);
       mountRef.current.removeChild(renderer.domElement);
       if (loadedMesh) {
         loadedMesh.geometry.dispose();
