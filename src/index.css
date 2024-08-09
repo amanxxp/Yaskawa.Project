@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@layer base {
+  html {
+    @apply font-serif;
+  }
+}
+@tailwind utilities;
