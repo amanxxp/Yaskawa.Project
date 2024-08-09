@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
@@ -6,6 +6,7 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 const Robot = () => {
   const mountRef = useRef(null);
 
+  const [controlPoints, setControlPoints] = useState([]);
   useEffect(() => {
     // Scene Setup
     const scene = new THREE.Scene();
@@ -67,6 +68,39 @@ const Robot = () => {
     controls.enableDamping = true;
     controls.dampingFactor = 0.25;
     controls.enableZoom = true;
+    const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+    const handleMouseClick = (event) => {
+        const boundingRect = mountRef.current.getBoundingClientRect();
+      mouse.x = ((event.clientX - boundingRect.left) / boundingRect.width) * 2 - 1;
+      mouse.y = -((event.clientY - boundingRect.top) / boundingRect.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        if (loadedMesh) {
+            const intersects = raycaster.intersectObject(loadedMesh);
+
+            if (intersects.length > 0) {
+                const point = intersects[0].point;
+
+                // Add control point
+                setControlPoints((prevPoints) => [...prevPoints, point]);
+
+                // Visualize the point
+                const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+                const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere.position.copy(point);
+                scene.add(sphere);
+            } else {
+                console.log('Clicked outside the model');
+            }
+        } else {
+            console.log('STL model not loaded yet');
+        }
+    };
+
+    window.addEventListener('click', handleMouseClick, false);
 
     // Animation Loop
     const animate = () => {
