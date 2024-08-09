@@ -3,18 +3,17 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 
-const Robot = () => {
+const Robot = ({ setPoints }) => {
   const mountRef = useRef(null);
   const [controlPoints, setControlPoints] = useState([]);
 
   useEffect(() => {
     // Scene Setup
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 100000); // Aspect ratio will be updated dynamically
-    camera.position.set(0, 150, 300);
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100000); // Aspect ratio will be updated dynamically
 
     // Renderer Setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(800, 600); // Initial size
     mountRef.current.appendChild(renderer.domElement);
 
@@ -50,7 +49,7 @@ const Robot = () => {
         scene.add(loadedMesh);
 
         // Adjust camera to fit the model
-        const distance = size.length() * 1.5;
+        const distance = size.length() * 2; // Adjusted multiplier
         camera.position.set(0, distance, distance);
         camera.lookAt(loadedMesh.position);
         camera.updateProjectionMatrix();
@@ -74,41 +73,49 @@ const Robot = () => {
 
     const handleMouseClick = (event) => {
       const boundingRect = mountRef.current.getBoundingClientRect();
-      mouse.x = ((event.clientX - boundingRect.left) / boundingRect.width) * 2 - 1;
-      mouse.y = -((event.clientY - boundingRect.top) / boundingRect.height) * 2 + 1;
+      mouse.x =
+        ((event.clientX - boundingRect.left) / boundingRect.width) * 2 - 1;
+      mouse.y =
+        -((event.clientY - boundingRect.top) / boundingRect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
+      const gridHelper = new THREE.GridHelper(1000, 50); // Size 100, 50 divisions
+      gridHelper.position.y = -50; // Position grid below the model
+      scene.add(gridHelper);
 
       if (loadedMesh) {
         const intersects = raycaster.intersectObject(loadedMesh);
 
         if (intersects.length > 0) {
           const point = intersects[0].point;
+          console.log("Clicked point on model:", point);
 
           // Add control point
+
           setControlPoints((prevPoints) => {
             const newPoints = [...prevPoints, point];
             if (newPoints.length === 3) {
               drawCurve(newPoints);
               return [];
             }
+            setPoints(newPoints);
             return newPoints;
           });
 
           // Visualize the point
           const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-          const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+          const sphereMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+          });
           const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
           sphere.position.copy(point);
           scene.add(sphere);
-        } else {
-          console.log('Clicked outside the model');
         }
       } else {
-        console.log('STL model not loaded yet');
+        console.log("STL model not loaded yet");
       }
     };
 
-    window.addEventListener('click', handleMouseClick, false);
+    window.addEventListener("click", handleMouseClick, false);
 
     function drawCurve(points) {
       const curve = new THREE.CatmullRomCurve3(points);
@@ -151,12 +158,7 @@ const Robot = () => {
     };
   }, []);
 
-  return (
-    <div
-      ref={mountRef}
-      className="h-full w-full"
-    />
-  );
+  return <div ref={mountRef} className="h-full w-full" />;
 };
 
 export default Robot;
