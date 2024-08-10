@@ -2,6 +2,7 @@ import { useState } from "react";
 import Log from "./components/Log";
 import Robot from "./components/Robot";
 import image1 from "/models/yaskawapng.png"
+// import Devansh from "./components/Devansh";
 
 const App = () => {
   const [Points, setPoints] = useState([]);
@@ -21,7 +22,8 @@ const App = () => {
       <div className="text-3xl w-1/4 m-10 border-2 h-full border-solid border-black rounded overflow-hidden">
       <Log Points={Points}/>
       </div>
-    </div></>
+    </div>
+    </>
   );
 };
 

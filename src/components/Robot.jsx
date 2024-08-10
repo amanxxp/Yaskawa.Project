@@ -6,21 +6,68 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 const Robot = ({ setPoints }) => {
   const mountRef = useRef(null);
   const [controlPoints, setControlPoints] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Scene Setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100000); // Aspect ratio will be updated dynamically
+    // Initialize the rotating cube (loading screen)
+    if (loading) {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        50,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setSize(800, 600);
+      mountRef.current.appendChild(renderer.domElement);
 
-    // Renderer Setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(800, 600); // Initial size
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      const material = new THREE.MeshBasicMaterial({ color: 0x0059b9 });
+      const cube = new THREE.Mesh(geometry, material);
+
+      cube.position.set(1.5, 0, 0);
+      scene.add(cube);
+
+      const edgesGeometry = new THREE.EdgesGeometry(geometry);
+      const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+      const outline = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+      cube.add(outline);
+
+      camera.position.z = 5;
+      const animate = () => {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.009;
+        cube.rotation.y += 0.1;
+        renderer.render(scene, camera);
+      };
+      animate();
+      // setLoading(false);
+
+      // Clean up on component unmount
+      return () => {
+        mountRef.current.removeChild(renderer.domElement);
+        renderer.dispose();
+      };
+    }
+  }, [loading])
+
+  useEffect(() => {
+    // Initialize the STL model rendering
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100000);
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
+    renderer.setSize(800, 600);
     mountRef.current.appendChild(renderer.domElement);
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(ambientLight);
-
     const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight1.position.set(1, 1, 1).normalize();
     scene.add(directionalLight1);
@@ -29,7 +76,6 @@ const Robot = ({ setPoints }) => {
     directionalLight2.position.set(-1, -1, -1).normalize();
     scene.add(directionalLight2);
 
-    // Model Loader
     const loader = new STLLoader();
     let loadedMesh;
 
@@ -39,7 +85,6 @@ const Robot = ({ setPoints }) => {
         const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
         loadedMesh = new THREE.Mesh(geometry, material);
 
-        // Centering the model
         geometry.computeBoundingBox();
         const box = geometry.boundingBox;
         const size = new THREE.Vector3();
@@ -47,12 +92,13 @@ const Robot = ({ setPoints }) => {
         loadedMesh.position.set(-size.x / 2, -size.y / 2, -size.z / 2);
 
         scene.add(loadedMesh);
-
-        // Adjust camera to fit the model
-        const distance = size.length() * 2; // Adjusted multiplier
+        const distance = size.length() * 2;
         camera.position.set(0, distance, distance);
         camera.lookAt(loadedMesh.position);
         camera.updateProjectionMatrix();
+
+        setLoading(false);
+        // Hide the cube and show the model
       },
       (xhr) => {
         console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
@@ -62,7 +108,6 @@ const Robot = ({ setPoints }) => {
       }
     );
 
-    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.25;
@@ -78,8 +123,8 @@ const Robot = ({ setPoints }) => {
       mouse.y =
         -((event.clientY - boundingRect.top) / boundingRect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const gridHelper = new THREE.GridHelper(1000, 50); // Size 100, 50 divisions
-      gridHelper.position.y = -50; // Position grid below the model
+      const gridHelper = new THREE.GridHelper(10000, 50);
+      gridHelper.position.y = -50;
       scene.add(gridHelper);
 
       if (loadedMesh) {
@@ -88,8 +133,6 @@ const Robot = ({ setPoints }) => {
         if (intersects.length > 0) {
           const point = intersects[0].point;
           console.log("Clicked point on model:", point);
-
-          // Add control point
 
           setControlPoints((prevPoints) => {
             const newPoints = [...prevPoints, point];
@@ -101,7 +144,6 @@ const Robot = ({ setPoints }) => {
             return newPoints;
           });
 
-          // Visualize the point
           const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
           const sphereMaterial = new THREE.MeshBasicMaterial({
             color: 0x00ff00,
@@ -126,15 +168,12 @@ const Robot = ({ setPoints }) => {
       scene.add(curveObject);
     }
 
-    // Animation Loop
     const animate = () => {
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     };
     animate();
-
-    // Handle Resize
     const handleResize = () => {
       const width = mountRef.current.clientWidth;
       const height = mountRef.current.clientHeight;
@@ -144,10 +183,8 @@ const Robot = ({ setPoints }) => {
     };
     window.addEventListener("resize", handleResize);
 
-    // Initial resize
     handleResize();
 
-    // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
       mountRef.current.removeChild(renderer.domElement);
@@ -156,9 +193,20 @@ const Robot = ({ setPoints }) => {
         loadedMesh.material.dispose();
       }
     };
-  }, []);
+  }, [loading]);
 
-  return <div ref={mountRef} className="h-full w-full" />;
+  return (
+    <>
+      <button
+        onClick={() => {
+          setLoading(false);
+        }}
+      >
+        click me{" "}
+      </button>
+      <div ref={mountRef} />
+    </>
+  );
 };
 
 export default Robot;
