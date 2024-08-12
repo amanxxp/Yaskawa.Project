@@ -45,9 +45,6 @@ const Robot = ({ setPoints }) => {
         renderer.render(scene, camera);
       };
       animate();
-      // setLoading(false);
-
-      // Clean up on component unmount
       return () => {
         mountRef.current.removeChild(renderer.domElement);
         renderer.dispose();
@@ -193,18 +190,17 @@ const Robot = ({ setPoints }) => {
         loadedMesh.material.dispose();
       }
     };
-  }, [loading]);
+  }, []);
 
   return (
     <>
-      <button
-        onClick={() => {
-          setLoading(false);
-        }}
-      >
-        click me{" "}
-      </button>
-      <div ref={mountRef} />
+    {
+      loading && 
+      <> 
+      your model is Loading...
+      </>
+    }
+      <div ref={mountRef} className="h-[500px]" />
     </>
   );
 };

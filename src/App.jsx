@@ -23,6 +23,7 @@ const App = () => {
       <Log Points={Points}/>
       </div>
     </div>
+    
     </>
   );
 };
