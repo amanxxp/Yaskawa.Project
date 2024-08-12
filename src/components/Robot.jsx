@@ -129,7 +129,7 @@ const Robot = ({ setPoints }) => {
 
         if (intersects.length > 0) {
           const point = intersects[0].point;
-          console.log("Clicked point on model:", point);
+          // console.log("Clicked point on model:", point);
 
           setControlPoints((prevPoints) => {
             const newPoints = [...prevPoints, point];
@@ -196,11 +196,11 @@ const Robot = ({ setPoints }) => {
     <>
     {
       loading && 
-      <> 
+      <div> 
       your model is Loading...
-      </>
+      </div>
     }
-      <div ref={mountRef} className="h-[500px]" />
+      <div ref={mountRef} className="h-[525px]" />
     </>
   );
 };
