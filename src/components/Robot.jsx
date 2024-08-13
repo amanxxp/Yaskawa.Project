@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
+import {DragControls} from "three/examples/jsm/controls/DragControls"
 import "../App.css"
 
 const Robot = ({ setPoints }) => {
@@ -64,6 +65,7 @@ const Robot = ({ setPoints }) => {
     });
     renderer.setSize(800, 600);
     mountRef.current.appendChild(renderer.domElement);
+    const objects=[];
 
     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(ambientLight);
@@ -90,6 +92,8 @@ const Robot = ({ setPoints }) => {
         addPointMode = true;
       });
 
+      const relativePositions = [];
+    let dragControls;
     loader.load(
       "/models/Assem17.stl",
       (geometry) => {
@@ -103,10 +107,19 @@ const Robot = ({ setPoints }) => {
         loadedMesh.position.set(-size.x / 2, -size.y / 2, -size.z / 2);
 
         scene.add(loadedMesh);
+        objects.push(loadedMesh);
         const distance = size.length() * 2;
         camera.position.set(0, distance, distance);
         camera.lookAt(loadedMesh.position);
         camera.updateProjectionMatrix();
+
+        dragControls = new DragControls(objects, camera, renderer.domElement);
+        dragControls.addEventListener("dragstart", () => {
+          controls.enabled = false;
+        });
+        dragControls.addEventListener("dragend", () => {
+          controls.enabled = true;
+        });
 
         setLoading(false);
         // Hide the cube and show the model
@@ -196,6 +209,7 @@ const Robot = ({ setPoints }) => {
     };
     window.addEventListener("resize", handleResize);
 
+
     handleResize();
 
     return () => {
@@ -205,6 +219,10 @@ const Robot = ({ setPoints }) => {
         loadedMesh.geometry.dispose();
         loadedMesh.material.dispose();
       }
+      if (dragControls) {
+        dragControls.dispose();
+      }
+      renderer.dispose();
     };
   }, []);
 
