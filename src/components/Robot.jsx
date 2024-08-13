@@ -2,11 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
+import "../App.css"
 
 const Robot = ({ setPoints }) => {
   const mountRef = useRef(null);
   const [controlPoints, setControlPoints] = useState([]);
   const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
     // Initialize the rotating cube (loading screen)
@@ -55,7 +57,7 @@ const Robot = ({ setPoints }) => {
   useEffect(() => {
     // Initialize the STL model rendering
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100000);
+    const camera = new THREE.PerspectiveCamera(10, 1, 0.1, 100000);
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -76,10 +78,22 @@ const Robot = ({ setPoints }) => {
     const loader = new STLLoader();
     let loadedMesh;
 
+    let clickedPositions = [];
+
+    let addPointMode = false;
+    const addPointButton = document.createElement("button");
+      addPointButton.id = "addPointButton";
+      addPointButton.textContent = "Add Point";
+      document.body.appendChild(addPointButton);
+
+      addPointButton.addEventListener("click", () => {
+        addPointMode = true;
+      });
+
     loader.load(
       "/models/Assem17.stl",
       (geometry) => {
-        const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
         loadedMesh = new THREE.Mesh(geometry, material);
 
         geometry.computeBoundingBox();
@@ -114,6 +128,7 @@ const Robot = ({ setPoints }) => {
     const mouse = new THREE.Vector2();
 
     const handleMouseClick = (event) => {
+      if(!addPointMode) return;
       const boundingRect = mountRef.current.getBoundingClientRect();
       mouse.x =
         ((event.clientX - boundingRect.left) / boundingRect.width) * 2 - 1;
@@ -131,15 +146,7 @@ const Robot = ({ setPoints }) => {
           const point = intersects[0].point;
           // console.log("Clicked point on model:", point);
 
-          setControlPoints((prevPoints) => {
-            const newPoints = [...prevPoints, point];
-            if (newPoints.length === 3) {
-              drawCurve(newPoints);
-              return [];
-            }
-            setPoints(newPoints);
-            return newPoints;
-          });
+          clickedPositions.push(point);
 
           const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
           const sphereMaterial = new THREE.MeshBasicMaterial({
@@ -148,6 +155,15 @@ const Robot = ({ setPoints }) => {
           const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
           sphere.position.copy(point);
           scene.add(sphere);
+
+          
+          if(clickedPositions.length === 3){
+            drawCurve(clickedPositions[0],clickedPositions[1],clickedPositions[2]);
+            setPoints(clickedPositions);
+            clickedPositions =[];
+          }
+          addPointMode = false;
+         
         }
       } else {
         console.log("STL model not loaded yet");
@@ -156,8 +172,8 @@ const Robot = ({ setPoints }) => {
 
     window.addEventListener("click", handleMouseClick, false);
 
-    function drawCurve(points) {
-      const curve = new THREE.CatmullRomCurve3(points);
+    function drawCurve(point1, point2, point3) {
+      const curve = new THREE.CatmullRomCurve3([point1, point2, point3]);
       const curvePoints = curve.getPoints(500);
       const geometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
       const material = new THREE.LineBasicMaterial({ color: 0xff0000 });

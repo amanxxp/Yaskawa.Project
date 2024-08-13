@@ -1,0 +1,12 @@
+#addPointButton {
+  position: absolute; /* or 'fixed' if you want it to stay in place when scrolling */
+  top: 200px; /* Adjust the top position */
+  left: 62vw;
+  padding: 10px 20px;
+  background-color: #007BFF; /* Button color */
+  color: white; /* Text color */
+  border: none; /* Remove border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional shadow for better look */
+}
