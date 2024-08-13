@@ -2,14 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
-import {DragControls} from "three/examples/jsm/controls/DragControls"
-import "../App.css"
+import { DragControls } from "three/examples/jsm/controls/DragControls";
+import "../App.css";
 
 const Robot = ({ setPoints }) => {
   const mountRef = useRef(null);
   const [controlPoints, setControlPoints] = useState([]);
   const [loading, setLoading] = useState(true);
-  
 
   useEffect(() => {
     // Initialize the rotating cube (loading screen)
@@ -53,7 +52,7 @@ const Robot = ({ setPoints }) => {
         renderer.dispose();
       };
     }
-  }, [loading])
+  }, [loading]);
 
   useEffect(() => {
     // Initialize the STL model rendering
@@ -65,7 +64,7 @@ const Robot = ({ setPoints }) => {
     });
     renderer.setSize(800, 600);
     mountRef.current.appendChild(renderer.domElement);
-    const objects=[];
+    const objects = [];
 
     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(ambientLight);
@@ -84,21 +83,24 @@ const Robot = ({ setPoints }) => {
 
     let addPointMode = false;
     const addPointButton = document.createElement("button");
-      addPointButton.id = "addPointButton";
-      addPointButton.textContent = "Add Point";
-      document.body.appendChild(addPointButton);
+    addPointButton.id = "addPointButton";
+    addPointButton.textContent = "Add Point";
+    document.body.appendChild(addPointButton);
 
-      addPointButton.addEventListener("click", () => {
-        addPointMode = true;
-      });
+    addPointButton.addEventListener("click", () => {
+      addPointMode = true;
+    });
 
-      const relativePositions = [];
+    const relativePositions = [];
     let dragControls;
     loader.load(
       "/models/Assem17.stl",
       (geometry) => {
-        const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         loadedMesh = new THREE.Mesh(geometry, material);
+
+        const scaleFactor = 10;
+        loadedMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
         geometry.computeBoundingBox();
         const box = geometry.boundingBox;
@@ -141,7 +143,7 @@ const Robot = ({ setPoints }) => {
     const mouse = new THREE.Vector2();
 
     const handleMouseClick = (event) => {
-      if(!addPointMode) return;
+      if (!addPointMode) return;
       const boundingRect = mountRef.current.getBoundingClientRect();
       mouse.x =
         ((event.clientX - boundingRect.left) / boundingRect.width) * 2 - 1;
@@ -169,14 +171,16 @@ const Robot = ({ setPoints }) => {
           sphere.position.copy(point);
           scene.add(sphere);
 
-          
-          if(clickedPositions.length === 3){
-            drawCurve(clickedPositions[0],clickedPositions[1],clickedPositions[2]);
+          if (clickedPositions.length === 3) {
+            drawCurve(
+              clickedPositions[0],
+              clickedPositions[1],
+              clickedPositions[2]
+            );
             setPoints(clickedPositions);
-            clickedPositions =[];
+            clickedPositions = [];
           }
           addPointMode = false;
-         
         }
       } else {
         console.log("STL model not loaded yet");
@@ -209,7 +213,6 @@ const Robot = ({ setPoints }) => {
     };
     window.addEventListener("resize", handleResize);
 
-
     handleResize();
 
     return () => {
@@ -228,12 +231,7 @@ const Robot = ({ setPoints }) => {
 
   return (
     <>
-    {
-      loading && 
-      <div> 
-      your model is Loading...
-      </div>
-    }
+      {loading && <div>your model is Loading...</div>}
       <div ref={mountRef} className="h-[525px]" />
     </>
   );
