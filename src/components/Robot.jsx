@@ -94,7 +94,7 @@ const Robot = ({ setPoints }) => {
     const relativePositions = [];
     let dragControls;
     loader.load(
-      "/models/Assem17.stl",
+      "/models/side_tube.stl",
       (geometry) => {
         const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         loadedMesh = new THREE.Mesh(geometry, material);
