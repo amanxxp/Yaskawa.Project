@@ -8,12 +8,16 @@ import { ModelState } from "./atoms/atom";
 import { HiOutlineArrowNarrowLeft } from "react-icons/hi";
 import { HiChevronLeft } from "react-icons/hi";
 import Nav from "./components/Nav";
+import Machine from "./Machine";
 
 const Model = () => {
   const [Points, setPoints] = useState([]);
-  const [postion, setPostion] = useState(false);
-  if (postion) {
-    return <>hi</>;
+  const [position, setPosition] = useRecoilState(ModelState);
+  const [postions, setPostions] = useState(false);
+  if (postions) {
+    return <>
+    <Machine/>
+    </>;
   }
   return (
     <>
@@ -21,14 +25,14 @@ const Model = () => {
         <img src={image1} alt="Yaskawa" className="mt-6 ml-8 mb-6 h-[40px]" />
         <div
           onClick={() => {
-            setPostion(true);
+            setPostions(true);
             const button = document.getElementById("addPointButton");
             if (button) {
               button.remove();
             }
           }}
         >
-          <Nav/>
+          <Nav />
         </div>
       </div>
       <div className="flex gap-0 p-0 overflow-hidden mr-6">
@@ -36,7 +40,11 @@ const Model = () => {
           <div className="flex justify-start items-center">
             <div
               onClick={() => {
-                setPostion(!postion);
+                setPosition(!position);
+                const button = document.getElementById("addPointButton");
+                if (button) {
+                  button.remove();
+                }
               }}
               className="flex items-center border-[2px] border-solid border-black h-[35px] w-[350px] cursor-pointer rounded-[5px] text-2xl"
             >
