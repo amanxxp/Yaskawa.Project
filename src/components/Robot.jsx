@@ -94,7 +94,7 @@ const Robot = ({ setPoints }) => {
     const relativePositions = [];
     let dragControls;
     loader.load(
-      "/models/side_tube.stl",
+      "/models/Assem17.stl",
       (geometry) => {
         const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         loadedMesh = new THREE.Mesh(geometry, material);
@@ -217,7 +217,7 @@ const Robot = ({ setPoints }) => {
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      mountRef.current.removeChild(renderer.domElement);
+      // mountRef.current.removeChild(renderer.domElement);
       if (loadedMesh) {
         loadedMesh.geometry.dispose();
         loadedMesh.material.dispose();
